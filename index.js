@@ -1,5 +1,5 @@
 const { Axios } = require("axios");
-const axios = require("axios")
+const axios = require("axios");
 require("dotenv").config();
 
 const invoice = {
@@ -81,6 +81,23 @@ const main = () => {
     requestConfig.data = JSON.stringify(data);
   }
 
-  
+  axios
+    .request({
+      method: "POST",
+      headers: {
+        Authorization: `hmac 9958f4c7-aecb-4d13-99e6-c0f6f9ac44eb:GYpayD9UaBNaLWVv+U+3DBB1MLuEe8nEz66p3VGLCN0=:8fdeaab02ff74294a4b1bb9f375f0603:1700487263:2302OMNI`,
+        "Content-Type": "application/json",
+      },
+      url: "https://aegis-integration.azurewebsites.net/v2/invoices/2302OMNI/create",
+      data: invoice,
+    })
+    .then((response) => {
+      // Handle successful response
+      console.log("Response:", response.data);
+    })
+    .catch((error) => {
+      // Handle error
+      console.error("Error:", error);
+    });
   return;
 };
