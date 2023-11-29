@@ -1,5 +1,9 @@
 const { Axios } = require("axios");
 const axios = require("axios");
+const { v4: uuidv4  } = require('uuid');
+const crypto = require("crypto");
+
+
 require("dotenv").config();
 
 const invoice = {
@@ -34,7 +38,7 @@ const invoice = {
 };
 
 const businessClientCode = process.env.AEGIS_BU_CODE;
-const aegisSignatureUrl = `${process.env.AEGIS_API}/v2/invoices/${this.businessClientCode}/create`;
+const aegisSignatureUrl = `${process.env.AEGIS_API}`;
 const AegisAppId = process.env.AEGIS_APP_ID;
 const AegisAppKey = process.env.AEGIS_APP_KEY;
 const main = () => {
@@ -44,25 +48,27 @@ const main = () => {
 
   let requestConfig;
   let headers = {
-    "Content-Type": "application/json; charset=utf-8",
-    // 'Content-Length': 554
+    "Content-Type": "application/json; charset=utf-8"
   };
   const nonce = uuidv4().replace(/-/g, "");
-
   const timeStamp = Math.floor(Date.now() / 1000);
+
+  const jsonPayloadByteArray =Buffer.from(JSON.stringify(invoice));
+
   let contentBase64 = crypto
     .createHash("md5")
-    .update(JSON.stringify(data))
-    .digest();
+    .update(jsonPayloadByteArray)
+    .digest("base64");
 
-  let aegisSignatureUrl = encodeURIComponent(
+ let _aegisSignatureUrl = encodeURIComponent(
     aegisSignatureUrl.toLowerCase()
   ).toLowerCase();
   const method = "POST";
 
   //prepare the payload data. sequence below is required when generating the signature
-  const rawPayloadData = `${APPId}${method}${aegisSignatureUrl}${timeStamp}${nonce}${contentBase64}`;
+  const rawPayloadData = `${APPId}${method}${_aegisSignatureUrl}${timeStamp}${nonce}${contentBase64}`;
   const secretKeyByteArray = Buffer.from(APIKey, "base64");
+  console.log(rawPayloadData);
 
   const hmac = crypto.createHmac("sha256", secretKeyByteArray);
   hmac.update(rawPayloadData);
@@ -70,25 +76,25 @@ const main = () => {
 
   (headers[
     "Authorization"
-  ] = `hmac 9958f4c7-aecb-4d13-99e6-c0f6f9ac44eb:wjriBk1nhORWbVdsqeMLOabkCGRbycKXm+YOW2U/9WM=:21eaeb1ef86a458e954689351eb72456:1700487097:2302OMNI`),
+  ] = `hmac ${APPId}:${sigBase64}:${nonce}:${timeStamp}:${businessCode}`),
     (requestConfig = {
       method,
       url: this.aegisSignatureUrl,
       headers,
     });
 
-  if (method === "POST" && data) {
-    requestConfig.data = JSON.stringify(data);
+  if (method === "POST" && invoice) {
+    requestConfig.data = JSON.stringify(invoice);
   }
 
   axios
     .request({
       method: "POST",
       headers: {
-        Authorization: `hmac 9958f4c7-aecb-4d13-99e6-c0f6f9ac44eb:GYpayD9UaBNaLWVv+U+3DBB1MLuEe8nEz66p3VGLCN0=:8fdeaab02ff74294a4b1bb9f375f0603:1700487263:2302OMNI`,
+        Authorization: `hmac ${APPId}:${sigBase64}:${nonce}:${timeStamp}:${businessCode}`,
         "Content-Type": "application/json",
       },
-      url: "https://aegis-integration.azurewebsites.net/v2/invoices/2302OMNI/create",
+      url: `${process.env.AEGIS_API}`,
       data: invoice,
     })
     .then((response) => {
@@ -101,3 +107,5 @@ const main = () => {
     });
   return;
 };
+
+main();
